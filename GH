@@ -1,7 +1,7 @@
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = gethui() or game:GetService("CoreGui")
 
--- [ ANTI-STACK ]
+
 if CoreGui:FindFirstChild("GalaxyHub_Project") then CoreGui:FindFirstChild("GalaxyHub_Project"):Destroy() end
 
 local Library = {
@@ -20,7 +20,7 @@ local Library = {
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "GalaxyHub_Project"
 
--- [ DRAG HANDLER ]
+
 local function MakeDraggable(topBar, mainFrame)
     local dragging, dragInput, dragStart, startPos
     topBar.InputBegan:Connect(function(input)
@@ -39,7 +39,7 @@ local function MakeDraggable(topBar, mainFrame)
     end)
 end
 
--- [ TOGGLE HANDLER ]
+
 UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == Library.ToggleKey then
         Library.Visible = not Library.Visible
