@@ -521,12 +521,174 @@ function Library:CreateWindow(Name, Size)
                 local s = Instance.new("UIStroke", Btn)
                 s.Color = Library.Theme.OutlineColor
 
+                -- Modern Color Picker Popup Implementation
                 Btn.MouseButton1Click:Connect(function()
-                    -- TODO: advanced color picker modal
-                    local hsv = tick()%5/5
-                    local NewColor = Color3.fromHSV(hsv, 0.9, 1)
-                    Tween(Btn, {BackgroundColor3 = NewColor}, 0.09):Play()
-                    if Callback then Callback(NewColor) end
+                    -- Remove existing popup if any
+                    if CP:FindFirstChild("ColorPopup") then
+                        CP.ColorPopup:Destroy()
+                        return
+                    end
+
+                    -- Popup Frame
+                    local Popup = Instance.new("Frame")
+                    Popup.Name = "ColorPopup"
+                    Popup.Size = UDim2.fromOffset(180, 150)
+                    Popup.Position = UDim2.new(0, Btn.AbsolutePosition.X - Content.AbsolutePosition.X, 1, -4)
+                    Popup.BackgroundColor3 = Library.Theme.MainColor
+                    Popup.BorderSizePixel = 0
+                    Popup.Parent = CP
+                    local ps = Instance.new("UIStroke", Popup)
+                    ps.Color = Library.Theme.OutlineColor
+
+                    -- Saturation/Value Picker
+                    local SV = Instance.new("ImageButton", Popup)
+                    SV.Name = "SV"
+                    SV.Size = UDim2.new(0, 130, 0, 130)
+                    SV.Position = UDim2.fromOffset(10, 10)
+                    SV.BackgroundColor3 = Color3.new(1,1,1)
+                    SV.AutoButtonColor = false
+                    SV.BorderSizePixel = 0
+                    SV.Image = "rbxassetid://4155801252" -- Gradient image for SV
+
+                    -- Hue Bar
+                    local HueBar = Instance.new("ImageButton", Popup)
+                    HueBar.Name = "HueBar"
+                    HueBar.Size = UDim2.new(0, 12, 0, 130)
+                    HueBar.Position = UDim2.fromOffset(150, 10)
+                    HueBar.BackgroundColor3 = Color3.fromRGB(255,255,255)
+                    HueBar.AutoButtonColor = false
+                    HueBar.BorderSizePixel = 0
+                    HueBar.Image = "rbxassetid://3641079629" -- Gradient image for hue
+
+                    -- Preview
+                    local Preview = Instance.new("Frame", Popup)
+                    Preview.Size = UDim2.fromOffset(25, 25)
+                    Preview.Position = UDim2.fromOffset(10, 145)
+                    Preview.BackgroundColor3 = Btn.BackgroundColor3
+                    Preview.BorderSizePixel = 0
+                    local prevs = Instance.new("UIStroke", Preview)
+                    prevs.Color = Library.Theme.OutlineColor
+
+                    -- Ok Button
+                    local Ok = Instance.new("TextButton", Popup)
+                    Ok.Size = UDim2.fromOffset(45, 25)
+                    Ok.Position = UDim2.fromOffset(65, 145)
+                    Ok.Text = "OK"
+                    Ok.Font = Library.Theme.Font
+                    Ok.TextSize = 13
+                    Ok.TextColor3 = Library.Theme.FontColor
+                    Ok.BackgroundColor3 = Library.Theme.AccentColor
+                    Ok.BorderSizePixel = 0
+                    local oks = Instance.new("UIStroke", Ok)
+                    oks.Color = Library.Theme.OutlineColor
+
+                    -- Cancel Button
+                    local Cancel = Instance.new("TextButton", Popup)
+                    Cancel.Size = UDim2.fromOffset(45, 25)
+                    Cancel.Position = UDim2.fromOffset(120, 145)
+                    Cancel.Text = "Cancel"
+                    Cancel.Font = Library.Theme.Font
+                    Cancel.TextSize = 13
+                    Cancel.TextColor3 = Library.Theme.FontColor
+                    Cancel.BackgroundColor3 = Library.Theme.MainColor
+                    Cancel.BorderSizePixel = 0
+                    local cxs = Instance.new("UIStroke", Cancel)
+                    cxs.Color = Library.Theme.OutlineColor
+
+                    -- HSV Storage
+                    local h, s, v = 0, 0, 1
+                    local function set(hh, ss, vv)
+                        h, s, v = hh, ss, vv
+                        local col = Color3.fromHSV(h, s, v)
+                        Preview.BackgroundColor3 = col
+                        SV.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+                    end
+
+                    -- Set to default or current value
+                    do
+                        local col = Btn.BackgroundColor3
+                        local _h, _s, _v = col:ToHSV()
+                        set(_h, _s, _v)
+                    end
+
+                    -- Hue Picking
+                    local dragging_hue = false
+                    local function update_hue(posY)
+                        local y = math.clamp(posY - HueBar.AbsolutePosition.Y, 0, HueBar.AbsoluteSize.Y)
+                        local hue = y / HueBar.AbsoluteSize.Y
+                        set(hue, s, v)
+                    end
+                    HueBar.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging_hue = true
+                            update_hue(input.Position.Y)
+                        end
+                    end)
+                    HueBar.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging_hue = false
+                        end
+                    end)
+                    game:GetService("UserInputService").InputChanged:Connect(function(input)
+                        if dragging_hue and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            update_hue(input.Position.Y)
+                        end
+                    end)
+
+                    -- SV Picking
+                    local dragging_sv = false
+                    local function update_sv(pos)
+                        local x = math.clamp(pos.X - SV.AbsolutePosition.X, 0, SV.AbsoluteSize.X)
+                        local y = math.clamp(pos.Y - SV.AbsolutePosition.Y, 0, SV.AbsoluteSize.Y)
+                        local ss = x / SV.AbsoluteSize.X
+                        local vv = 1 - (y / SV.AbsoluteSize.Y)
+                        set(h, ss, vv)
+                    end
+                    SV.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging_sv = true
+                            update_sv(input.Position)
+                        end
+                    end)
+                    SV.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging_sv = false
+                        end
+                    end)
+                    game:GetService("UserInputService").InputChanged:Connect(function(input)
+                        if dragging_sv and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            update_sv(input.Position)
+                        end
+                    end)
+
+                    -- OK/Cancel/Click-away handling
+                    Ok.MouseButton1Click:Connect(function()
+                        local newCol = Color3.fromHSV(h, s, v)
+                        Tween(Btn, {BackgroundColor3 = newCol}, 0.09):Play()
+                        if Callback then Callback(newCol) end
+                        Popup:Destroy()
+                    end)
+                    Cancel.MouseButton1Click:Connect(function()
+                        Popup:Destroy()
+                    end)
+                    -- Dismiss on outside click
+                    local conn
+                    conn = game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+                        if processed then return end
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
+                            local abs = Popup.AbsolutePosition
+                            local size = Popup.AbsoluteSize
+                            if not (mousePos.X >= abs.X and mousePos.X <= abs.X+size.X and mousePos.Y >= abs.Y and mousePos.Y <= abs.Y+size.Y) then
+                                Popup:Destroy()
+                            end
+                        end
+                    end)
+                    Popup.AncestryChanged:Connect(function(_, parent)
+                        if not parent then
+                            if conn then conn:Disconnect() end
+                        end
+                    end)
                 end)
             end
 
