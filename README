@@ -1,0 +1,29 @@
+To use GalaxyHub in your script, copy the source code and use the following template at the bottom:
+
+
+-- 1. Create the Window
+local Win = Library:CreateWindow("GALAXYHUB V1")
+
+-- 2. Create your Tabs
+local LegitTab = Win:CreateTab("Legit")
+local VisualsTab = Win:CreateTab("Visuals")
+
+-- 3. Create GroupBoxes (Containers for your buttons)
+local AimbotBox = LegitTab:AddGroupBox("Aimbot Settings", "Left")
+local EspBox = VisualsTab:AddGroupBox("Visual Settings", "Left")
+
+-- 4. Add Elements to specific tabs/boxes
+AimbotBox:AddButton("Reset Config", function()
+    print("Settings Reset!")
+end)
+
+AimbotBox:AddSlider("FOV", 0, 360, 90, function(value)
+    print("New FOV: " .. value)
+end)
+
+EspBox:AddDropdown("Box Type", {"2D", "3D", "Corner"}, function(selected)
+    print("Selected: " .. selected)
+end)
+
+-- 5. Always select a tab at the end to display the UI
+LegitTab:Select()
