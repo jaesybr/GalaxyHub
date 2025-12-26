@@ -9,12 +9,14 @@ ScreenGui.Name = "GalaxyHub_Project"
 
 function Library:CreateWindow(Name, Size)
     local Window = {CurrentTab = nil}
-    local MainSize = Size or Vector2.new(500, 500)
+    local X = Size and Size.X or 500
+    local Y = Size and Size.Y or 500
     
     local Main = Instance.new("Frame", ScreenGui)
+    Main.Name = "Main"
     Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Main.Size = UDim2.fromOffset(MainSize.X, MainSize.Y)
-    Main.Position = UDim2.new(0.5, -MainSize.X/2, 0.5, -MainSize.Y/2)
+    Main.Size = UDim2.fromOffset(X, Y)
+    Main.Position = UDim2.new(0.5, -X/2, 0.5, -Y/2)
     Instance.new("UIStroke", Main).Color = Color3.fromRGB(45, 45, 45)
 
     local TopBar = Instance.new("Frame", Main)
@@ -22,51 +24,57 @@ function Library:CreateWindow(Name, Size)
     TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     
     local Title = Instance.new("TextLabel", TopBar)
-    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = Name; Title.TextColor3 = Color3.fromRGB(255, 255, 255); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.Code
+    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = "  " .. Name; Title.TextColor3 = Color3.fromRGB(255, 255, 255); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.Code; Title.TextXAlignment = Enum.TextXAlignment.Left
 
     local TabHolder = Instance.new("Frame", Main)
     TabHolder.Position = UDim2.fromOffset(0, 30); TabHolder.Size = UDim2.new(1, 0, 0, 30); TabHolder.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    local TabList = Instance.new("UIListLayout", TabHolder); TabList.FillDirection = Enum.FillDirection.Horizontal
+    local TabList = Instance.new("UIListLayout", TabHolder); TabList.FillDirection = Enum.FillDirection.Horizontal; TabList.Padding = UDim.new(0, 5)
 
     local Container = Instance.new("Frame", Main)
-    Container.Position = UDim2.fromOffset(0, 60); Container.Size = UDim2.new(1, 0, 1, -60); Container.BackgroundTransparency = 1
+    Container.Name = "Container"
+    Container.Position = UDim2.fromOffset(10, 70); Container.Size = UDim2.new(1, -20, 1, -80); Container.BackgroundTransparency = 1
 
     function Window:CreateTab(TabName)
         local Tab = {}
         local TBtn = Instance.new("TextButton", TabHolder)
-        TBtn.Size = UDim2.new(0, 100, 1, 0); TBtn.Text = TabName; TBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TBtn.Size = UDim2.new(0, 100, 1, 0); TBtn.Text = TabName; TBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TBtn.TextColor3 = Color3.fromRGB(255, 255, 255); TBtn.Font = Enum.Font.Code
 
-        local Page = Instance.new("ScrollingFrame", Container)
-        Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false; Page.CanvasSize = UDim2.new(0,0,5,0)
-        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 5)
+        local Page = Instance.new("Frame", Container)
+        Page.Name = TabName .. "_Page"
+        Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false
+        local PageLayout = Instance.new("UIListLayout", Page); PageLayout.Padding = UDim.new(0, 10)
 
         TBtn.MouseButton1Click:Connect(function()
-            for _, v in pairs(Container:GetChildren()) do v.Visible = false end
+            for _, v in pairs(Container:GetChildren()) do if v:IsA("Frame") then v.Visible = false end end
             Page.Visible = true
         end)
 
         function Tab:AddGroupBox(GName)
             local Group = {}
             local Box = Instance.new("Frame", Page)
-            Box.Size = UDim2.new(1, -10, 0, 100); Box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            Instance.new("UIListLayout", Box).Padding = UDim.new(0, 5)
+            Box.Name = GName .. "_Box"
+            Box.Size = UDim2.new(1, 0, 0, 30); Box.AutomaticSize = Enum.AutomaticSize.Y; Box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            Instance.new("UIStroke", Box).Color = Color3.fromRGB(45, 45, 45)
             
+            local List = Instance.new("Frame", Box)
+            List.Size = UDim2.new(1, 0, 1, 0); List.BackgroundTransparency = 1; List.AutomaticSize = Enum.AutomaticSize.Y
+            Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
+            Instance.new("UIPadding", List).PaddingTop = UDim.new(0, 25); Instance.new("UIPadding", List).PaddingLeft = UDim.new(0, 10); Instance.new("UIPadding", List).PaddingRight = UDim.new(0, 10); Instance.new("UIPadding", List).PaddingBottom = UDim.new(0, 10)
+
             local L = Instance.new("TextLabel", Box)
-            L.Size = UDim2.new(1, 0, 0, 20); L.Text = GName; L.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+            L.Size = UDim2.new(1, 0, 0, 20); L.Text = " " .. GName; L.BackgroundColor3 = Color3.fromRGB(120, 80, 255); L.TextColor3 = Color3.fromRGB(255, 255, 255); L.Font = Enum.Font.Code; L.TextXAlignment = Enum.TextXAlignment.Left
 
             function Group:AddButton(BName, Callback)
-                local B = Instance.new("TextButton", Box)
-                B.Size = UDim2.new(1, 0, 0, 30); B.Text = BName; B.BackgroundColor3 = Color3.fromRGB(50, 50, 50); B.TextColor3 = Color3.fromRGB(255, 255, 255)
+                local B = Instance.new("TextButton", List)
+                B.Size = UDim2.new(1, 0, 0, 25); B.Text = BName; B.BackgroundColor3 = Color3.fromRGB(40, 40, 40); B.TextColor3 = Color3.fromRGB(255, 255, 255); B.Font = Enum.Font.Code
+                Instance.new("UIStroke", B).Color = Color3.fromRGB(60, 60, 60)
                 B.MouseButton1Click:Connect(Callback)
             end
             return Group
         end
         
-        -- Force the first tab created to be visible immediately
-        if Window.CurrentTab == nil then
-            Window.CurrentTab = Tab
-            Page.Visible = true
-        end
+        -- Automatically show the very first tab
+        if #Container:GetChildren() == 1 then Page.Visible = true end
         
         return Tab
     end
