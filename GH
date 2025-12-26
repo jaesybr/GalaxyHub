@@ -3,81 +3,155 @@ local CoreGui = gethui() or game:GetService("CoreGui")
 
 if CoreGui:FindFirstChild("GalaxyHub_Project") then CoreGui:FindFirstChild("GalaxyHub_Project"):Destroy() end
 
-local Library = {Visible = true}
+local Library = {
+    Visible = true, 
+    Flags = {}, 
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = {
+        MainColor = Color3.fromRGB(15, 15, 15),
+        AccentColor = Color3.fromRGB(120, 80, 255),
+        OutlineColor = Color3.fromRGB(35, 35, 35),
+        FontColor = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.Code,
+    }
+}
+
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "GalaxyHub_Project"
 
+local function MakeDraggable(topBar, mainFrame)
+    local dragging, dragInput, dragStart, startPos
+    topBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = mainFrame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Library.ToggleKey then
+        Library.Visible = not Library.Visible
+        ScreenGui.Enabled = Library.Visible
+    end
+end)
+
 function Library:CreateWindow(Name, Size)
-    local Window = {CurrentTab = nil}
-    local X = Size and Size.X or 500
-    local Y = Size and Size.Y or 500
+    local Window = { CurrentTab = nil }
+    local XSize = Size and Size.X or 550
+    local YSize = Size and Size.Y or 480
     
-    local Main = Instance.new("Frame", ScreenGui)
-    Main.Name = "Main"
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Main.Size = UDim2.fromOffset(X, Y)
-    Main.Position = UDim2.new(0.5, -X/2, 0.5, -Y/2)
-    Instance.new("UIStroke", Main).Color = Color3.fromRGB(45, 45, 45)
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.fromOffset(XSize, YSize)
+    MainFrame.Position = UDim2.new(0.5, -(XSize/2), 0.5, -(YSize/2))
+    MainFrame.BackgroundColor3 = Library.Theme.MainColor
+    Instance.new("UIStroke", MainFrame).Color = Library.Theme.OutlineColor
 
-    local TopBar = Instance.new("Frame", Main)
-    TopBar.Size = UDim2.new(1, 0, 0, 30)
-    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    
-    local Title = Instance.new("TextLabel", TopBar)
-    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = "  " .. Name; Title.TextColor3 = Color3.fromRGB(255, 255, 255); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.Code; Title.TextXAlignment = Enum.TextXAlignment.Left
+    local Header = Instance.new("Frame", MainFrame)
+    Header.Size = UDim2.new(1, 0, 0, 30); Header.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    local Title = Instance.new("TextLabel", Header)
+    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = "  " .. Name; Title.TextColor3 = Library.Theme.FontColor; Title.Font = Library.Theme.Font; Title.BackgroundTransparency = 1; Title.TextSize = 14; Title.TextXAlignment = Enum.TextXAlignment.Left
+    MakeDraggable(Header, MainFrame)
 
-    local TabHolder = Instance.new("Frame", Main)
-    TabHolder.Position = UDim2.fromOffset(0, 30); TabHolder.Size = UDim2.new(1, 0, 0, 30); TabHolder.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    local TabList = Instance.new("UIListLayout", TabHolder); TabList.FillDirection = Enum.FillDirection.Horizontal; TabList.Padding = UDim.new(0, 5)
+    local TabBar = Instance.new("Frame", MainFrame)
+    TabBar.Size = UDim2.new(1, -20, 0, 30); TabBar.Position = UDim2.fromOffset(10, 35); TabBar.BackgroundTransparency = 1
+    Instance.new("UIListLayout", TabBar).FillDirection = Enum.FillDirection.Horizontal; TabBar.UIListLayout.Padding = UDim.new(0, 5)
 
-    local Container = Instance.new("Frame", Main)
-    Container.Name = "Container"
-    Container.Position = UDim2.fromOffset(10, 70); Container.Size = UDim2.new(1, -20, 1, -80); Container.BackgroundTransparency = 1
+    local Container = Instance.new("Frame", MainFrame)
+    Container.Size = UDim2.new(1, -20, 1, -85); Container.Position = UDim2.fromOffset(10, 75); Container.BackgroundTransparency = 1
 
     function Window:CreateTab(TabName)
         local Tab = {}
-        local TBtn = Instance.new("TextButton", TabHolder)
-        TBtn.Size = UDim2.new(0, 100, 1, 0); TBtn.Text = TabName; TBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); TBtn.TextColor3 = Color3.fromRGB(255, 255, 255); TBtn.Font = Enum.Font.Code
+        local TabBtn = Instance.new("TextButton", TabBar)
+        TabBtn.Size = UDim2.new(0, 100, 1, 0); TabBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); TabBtn.Text = TabName; TabBtn.TextColor3 = Color3.fromRGB(160, 160, 160); TabBtn.Font = Library.Theme.Font; TabBtn.TextSize = 13
+        Instance.new("UIStroke", TabBtn).Color = Library.Theme.OutlineColor
 
-        local Page = Instance.new("Frame", Container)
-        Page.Name = TabName .. "_Page"
-        Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false
-        local PageLayout = Instance.new("UIListLayout", Page); PageLayout.Padding = UDim.new(0, 10)
+        local Page = Instance.new("Frame", Container); Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundTransparency = 1; Page.Visible = false
+        local Left = Instance.new("ScrollingFrame", Page); Left.Size = UDim2.new(0.5, -5, 1, 0); Left.BackgroundTransparency = 1; Left.ScrollBarThickness = 0; Left.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        local Right = Instance.new("ScrollingFrame", Page); Right.Size = UDim2.new(0.5, -5, 1, 0); Right.Position = UDim2.new(0.5, 5, 0, 0); Right.BackgroundTransparency = 1; Right.ScrollBarThickness = 0; Right.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Instance.new("UIListLayout", Left).Padding = UDim.new(0, 15); Instance.new("UIListLayout", Right).Padding = UDim.new(0, 15)
 
-        TBtn.MouseButton1Click:Connect(function()
-            for _, v in pairs(Container:GetChildren()) do if v:IsA("Frame") then v.Visible = false end end
-            Page.Visible = true
-        end)
+        function Tab:Select()
+            if Window.CurrentTab then Window.CurrentTab.Page.Visible = false; Window.CurrentTab.Btn.TextColor3 = Color3.fromRGB(160, 160, 160) end
+            Page.Visible = true; TabBtn.TextColor3 = Library.Theme.AccentColor; Window.CurrentTab = {Page = Page, Btn = TabBtn}
+        end
+        TabBtn.MouseButton1Click:Connect(function() Tab:Select() end)
 
-        function Tab:AddGroupBox(GName)
+        function Tab:AddGroupBox(GName, Side)
             local Group = {}
-            local Box = Instance.new("Frame", Page)
-            Box.Name = GName .. "_Box"
-            Box.Size = UDim2.new(1, 0, 0, 30); Box.AutomaticSize = Enum.AutomaticSize.Y; Box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-            Instance.new("UIStroke", Box).Color = Color3.fromRGB(45, 45, 45)
-            
-            local List = Instance.new("Frame", Box)
-            List.Size = UDim2.new(1, 0, 1, 0); List.BackgroundTransparency = 1; List.AutomaticSize = Enum.AutomaticSize.Y
-            Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
-            Instance.new("UIPadding", List).PaddingTop = UDim.new(0, 25); Instance.new("UIPadding", List).PaddingLeft = UDim.new(0, 10); Instance.new("UIPadding", List).PaddingRight = UDim.new(0, 10); Instance.new("UIPadding", List).PaddingBottom = UDim.new(0, 10)
-
-            local L = Instance.new("TextLabel", Box)
-            L.Size = UDim2.new(1, 0, 0, 20); L.Text = " " .. GName; L.BackgroundColor3 = Color3.fromRGB(120, 80, 255); L.TextColor3 = Color3.fromRGB(255, 255, 255); L.Font = Enum.Font.Code; L.TextXAlignment = Enum.TextXAlignment.Left
+            local ParentCol = (Side == "Right" and Right or Left)
+            local Box = Instance.new("Frame", ParentCol)
+            Box.Size = UDim2.new(1, 0, 0, 20); Box.AutomaticSize = Enum.AutomaticSize.Y; Box.BackgroundColor3 = Library.Theme.MainColor; Instance.new("UIStroke", Box).Color = Library.Theme.OutlineColor
+            local Content = Instance.new("Frame", Box); Content.Size = UDim2.new(1, 0, 1, 0); Content.BackgroundTransparency = 1; Instance.new("UIPadding", Content).Padding = UDim.new(0, 12, 0, 10); Instance.new("UIListLayout", Content).Padding = UDim.new(0, 8)
+            local L = Instance.new("TextLabel", Box); L.Text = " " .. GName .. " "; L.Position = UDim2.fromOffset(10, -8); L.BackgroundColor3 = Library.Theme.MainColor; L.TextColor3 = Library.Theme.FontColor; L.AutomaticSize = Enum.AutomaticSize.X; L.Font = Library.Theme.Font; L.TextSize = 12
 
             function Group:AddButton(BName, Callback)
-                local B = Instance.new("TextButton", List)
-                B.Size = UDim2.new(1, 0, 0, 25); B.Text = BName; B.BackgroundColor3 = Color3.fromRGB(40, 40, 40); B.TextColor3 = Color3.fromRGB(255, 255, 255); B.Font = Enum.Font.Code
-                Instance.new("UIStroke", B).Color = Color3.fromRGB(60, 60, 60)
+                local B = Instance.new("TextButton", Content); B.Size = UDim2.new(1, 0, 0, 22); B.BackgroundColor3 = Color3.fromRGB(25, 25, 25); B.Text = BName; B.TextColor3 = Library.Theme.FontColor; B.Font = Library.Theme.Font; B.TextSize = 12; Instance.new("UIStroke", B).Color = Library.Theme.OutlineColor
                 B.MouseButton1Click:Connect(Callback)
             end
+
+            function Group:AddToggle(TName, Default, Callback)
+                local T = Instance.new("TextButton", Content); T.Size = UDim2.new(1, 0, 0, 20); T.BackgroundTransparency = 1; T.Text = ""; 
+                local Lbl = Instance.new("TextLabel", T); Lbl.Text = TName; Lbl.Size = UDim2.new(1, 0, 1, 0); Lbl.TextColor3 = Library.Theme.FontColor; Lbl.Font = Library.Theme.Font; Lbl.TextSize = 12; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left
+                local Box = Instance.new("Frame", T); Box.Size = UDim2.fromOffset(14, 14); Box.Position = UDim2.new(1, -18, 0.5, -7); Box.BackgroundColor3 = Default and Library.Theme.AccentColor or Color3.fromRGB(30, 30, 30); Instance.new("UIStroke", Box).Color = Library.Theme.OutlineColor
+                local State = Default
+                T.MouseButton1Click:Connect(function()
+                    State = not State; Box.BackgroundColor3 = State and Library.Theme.AccentColor or Color3.fromRGB(30, 30, 30); Callback(State)
+                end)
+            end
+
+            function Group:AddTextBox(TName, Placeholder, Callback)
+                local TB = Instance.new("Frame", Content); TB.Size = UDim2.new(1, 0, 0, 40); TB.BackgroundTransparency = 1
+                local Lbl = Instance.new("TextLabel", TB); Lbl.Text = TName; Lbl.Size = UDim2.new(1, 0, 0, 15); Lbl.TextColor3 = Library.Theme.FontColor; Lbl.Font = Library.Theme.Font; Lbl.TextSize = 12; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left
+                local Input = Instance.new("TextBox", TB); Input.Size = UDim2.new(1, 0, 0, 20); Input.Position = UDim2.fromOffset(0, 18); Input.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Input.PlaceholderText = Placeholder; Input.Text = ""; Input.TextColor3 = Library.Theme.FontColor; Input.Font = Library.Theme.Font; Input.TextSize = 11; Instance.new("UIStroke", Input).Color = Library.Theme.OutlineColor
+                Input.FocusLost:Connect(function() Callback(Input.Text) end)
+            end
+
+            function Group:AddSlider(SName, Min, Max, Default, Callback)
+                local S = Instance.new("Frame", Content); S.Size = UDim2.new(1, 0, 0, 35); S.BackgroundTransparency = 1
+                local T = Instance.new("TextLabel", S); T.Text = SName .. ": " .. Default; T.Size = UDim2.new(1, 0, 0, 15); T.TextColor3 = Library.Theme.FontColor; T.Font = Library.Theme.Font; T.TextSize = 12; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left
+                local BG = Instance.new("Frame", S); BG.Size = UDim2.new(1, 0, 0, 6); BG.Position = UDim2.fromOffset(0, 20); BG.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Instance.new("UIStroke", BG).Color = Library.Theme.OutlineColor
+                local Fill = Instance.new("Frame", BG); Fill.Size = UDim2.new((Default-Min)/(Max-Min), 0, 1, 0); Fill.BackgroundColor3 = Library.Theme.AccentColor
+                local function Update()
+                    local percent = math.clamp((UserInputService:GetMouseLocation().X - BG.AbsolutePosition.X) / BG.AbsoluteSize.X, 0, 1)
+                    local value = math.floor(Min + (Max - Min) * percent); Fill.Size = UDim2.new(percent, 0, 1, 0); T.Text = SName .. ": " .. value; Callback(value)
+                end
+                BG.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then local move; move = UserInputService.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement then Update() end end) local ended; ended = UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then move:Disconnect(); ended:Disconnect() end end) Update() end end)
+            end
+
+            function Group:AddDropdown(DName, List, Callback)
+                local D = Instance.new("Frame", Content); D.Size = UDim2.new(1, 0, 0, 40); D.BackgroundTransparency = 1
+                local Lbl = Instance.new("TextLabel", D); Lbl.Text = DName; Lbl.Size = UDim2.new(1, 0, 0, 15); Lbl.TextColor3 = Library.Theme.FontColor; Lbl.Font = Library.Theme.Font; Lbl.TextSize = 12; Lbl.BackgroundTransparency = 1; Lbl.TextXAlignment = Enum.TextXAlignment.Left
+                local Btn = Instance.new("TextButton", D); Btn.Size = UDim2.new(1, 0, 0, 20); Btn.Position = UDim2.fromOffset(0, 18); Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Btn.Text = "Select..."; Btn.TextColor3 = Library.Theme.FontColor; Btn.Font = Library.Theme.Font; Btn.TextSize = 11; Instance.new("UIStroke", Btn).Color = Library.Theme.OutlineColor
+                local Panel = Instance.new("ScrollingFrame", ScreenGui); Panel.Size = UDim2.new(0, 200, 0, 100); Panel.Visible = false; Panel.BackgroundColor3 = Library.Theme.MainColor; Panel.ZIndex = 10; Panel.AutomaticCanvasSize = Enum.AutomaticSize.Y; Panel.ScrollBarThickness = 2
+                Instance.new("UIStroke", Panel).Color = Library.Theme.OutlineColor; Instance.new("UIListLayout", Panel)
+                Btn.MouseButton1Click:Connect(function() Panel.Position = UDim2.fromOffset(Btn.AbsolutePosition.X, Btn.AbsolutePosition.Y + 55); Panel.Visible = not Panel.Visible end)
+                for _, v in pairs(List) do
+                    local O = Instance.new("TextButton", Panel); O.Size = UDim2.new(1, 0, 0, 20); O.BackgroundColor3 = Library.Theme.MainColor; O.Text = v; O.TextColor3 = Library.Theme.FontColor; O.Font = Library.Theme.Font; O.TextSize = 11; O.BorderSizePixel = 0
+                    O.MouseButton1Click:Connect(function() Btn.Text = v; Panel.Visible = false; Callback(v) end)
+                end
+            end
+
+            function Group:AddColorPicker(PName, Default, Callback)
+                local CP = Instance.new("Frame", Content); CP.Size = UDim2.new(1, 0, 0, 20); CP.BackgroundTransparency = 1
+                local T = Instance.new("TextLabel", CP); T.Text = PName; T.Size = UDim2.new(1, 0, 1, 0); T.TextColor3 = Library.Theme.FontColor; T.Font = Library.Theme.Font; T.TextSize = 12; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left
+                local BoxBtn = Instance.new("TextButton", CP); BoxBtn.Size = UDim2.fromOffset(20, 12); BoxBtn.Position = UDim2.new(1, -25, 0.5, -6); BoxBtn.BackgroundColor3 = Default; BoxBtn.Text = ""; Instance.new("UIStroke", BoxBtn).Color = Library.Theme.OutlineColor
+                BoxBtn.MouseButton1Click:Connect(function() local NewColor = Color3.fromHSV(tick() % 5 / 5, 1, 1); BoxBtn.BackgroundColor3 = NewColor; Callback(NewColor) end)
+            end
+
             return Group
         end
-        
-        -- Automatically show the very first tab
-        if #Container:GetChildren() == 1 then Page.Visible = true end
-        
         return Tab
     end
     return Window
 end
+
 return Library
